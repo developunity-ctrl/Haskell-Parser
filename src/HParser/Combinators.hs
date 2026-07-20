@@ -111,7 +111,7 @@ sepBy p sep = sepBy1 p sep <|> pure []
 (.>>.) = andThen
 
 (|>>) :: Parser a -> (a -> b) -> Parser b
-(|>>) x f = fmap f x
+(|>>) x f = f <$> x
 
 (.>>) :: Parser a -> Parser b -> Parser a
 pA .>> pB = (pA .>>. pB) |>> (\(a, b) -> a)

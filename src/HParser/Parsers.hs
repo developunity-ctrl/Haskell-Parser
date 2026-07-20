@@ -33,14 +33,25 @@ pstring = sequence' . (map pchar)
 
 pint :: Parser Int
 pint =
-  optional (pchar '-') .>>. digits |>> resultToInt
+  optional (pchar '-') .>>. digits |>> resultToInt <?> (ParserLabel "integer")
   where
-    digits = setLabel (some $ anyOf ['1' .. '9']) $ ParserLabel "digits"
+    digits = some $ anyOf ['1' .. '9']
     resultToInt (sign, digitsList) =
       let integer = (read digitsList :: Int)
        in case sign of
             Just _ -> -integer
             Nothing -> integer
+
+pfloat :: Parser Double
+pfloat =
+  (optional (pchar '-') .>>. digits .>>. pchar '.' .>>. digits) |>> resultToFloat <?> (ParserLabel "float")
+  where
+    digits = some $ anyOf ['0' .. '9']
+    resultToFloat (((sign, digits1), point), digits2) =
+      let float = (read (digits1 ++ "." ++ digits2) :: Double)
+       in case sign of
+            Just _ -> -float
+            Nothing -> float
 
 choice :: (Foldable f) => f (Parser a) -> Parser a
 choice = foldr (<|>) empty

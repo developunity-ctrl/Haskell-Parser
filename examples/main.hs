@@ -1,18 +1,9 @@
 module Main where
 
 import Debug.Trace
-import HParser.Declarations
 import HParser.Combinators
-
-printResult :: ParseResult (Char, String) -> IO ()
-printResult (Success (value, _)) = print $ show value
-printResult
-  (Failure (label, error', parserPosition)) =
-    let failureCaret = (replicate colPos ' ') ++ "^" ++ show error'
-        errorLine = show $ ppCurrentLine parserPosition
-        colPos = ppColumn parserPosition
-        linePos = show $ ppLine parserPosition
-     in putStrLn ("Line: " ++ linePos ++ " Col: " ++ show colPos ++ " Error Parsing " ++ show label ++ "\n" ++ errorLine ++ "\n" ++ failureCaret)
+import HParser.Declarations
+import HParser.Parsers
 
 -- parsers :: [Parser Char]
 -- parsers = [pchar 'A', pchar 'B', pchar 'C']
@@ -22,6 +13,7 @@ printResult
 
 -- intArray = between (pchar '[') (sepBy1 pint (pchar ',')) (pchar ']')
 
+exampleError :: ParseResult (Char, String)
 exampleError =
   Failure
     ( ParserLabel "indentifier",
@@ -35,5 +27,5 @@ exampleError =
 
 main = do
   putStrLn "\nStarted NTParser\n"
-  printResult exampleError
+  print $ run pfloat "-12.32325Z"
   putStrLn "\nComplete NTParser"

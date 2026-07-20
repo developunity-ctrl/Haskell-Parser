@@ -15,7 +15,16 @@ instance Show ParserError where
 data ParseResult a
   = Success a
   | Failure (ParserLabel, ParserError, ParserPosition)
-  deriving (Show, Eq)
+  deriving (Eq)
+
+instance (Show b) => Show (ParseResult (b, c)) where
+  show (Success (value, _)) = (show value)
+  show (Failure (label, error', parserPosition)) =
+    let failureCaret = (replicate (colPos) ' ') ++ "^" ++ show error'
+        errorLine = show $ ppCurrentLine parserPosition
+        colPos = ppColumn parserPosition
+        linePos = show $ ppLine parserPosition
+     in ("Line: " ++ linePos ++ " Col: " ++ show colPos ++ " Error Parsing " ++ show label ++ "\n" ++ errorLine ++ "\n" ++ failureCaret)
 
 data Parser t = Parser
   { parseFn :: InputState -> ParseResult (t, InputState),
