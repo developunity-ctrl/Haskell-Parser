@@ -1,0 +1,34 @@
+# --- Cabal and vuild artifacts ---
+dist/
+dist-*
+cabal-dev/
+.cabal-sandbox/
+cabal.sandbox.config
+cabal.project.local
+cabal.project.local~
+cabal.project.save
+cabal.project.freeze
+
+# GHC artifacts
+.hie-bios/
+.hie/
+.ghc.environment.*
+
+# --- Temp files and filders ---
+*.o
+*.hi
+*.chi
+*.chs.h
+*.dyn_o
+*.dyn_hi
+.stack-work/
+.gdb_history
+
+# --- Redactor configs ---
+.vscode/
+.idea/
+*.suo
+*.ntp
+*.sublime-project
+*.sublime-workspace
+.DS_Store
