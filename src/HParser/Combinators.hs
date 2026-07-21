@@ -1,6 +1,7 @@
 module HParser.Combinators where
 
 import Control.Applicative
+import qualified Data.Text as T
 import HParser.Declarations
 import HParser.InputState
 
@@ -13,7 +14,7 @@ instance Applicative Parser where
   pure x =
     Parser
       { parseFn = \input -> Success (x, input),
-        pLabel = ParserLabel $ show "unknown"
+        pLabel = ParserLabel $ "unknown"
       }
 
   -- (<*>) :: Parser (a -> b) -> Parser a -> Parser b
@@ -53,18 +54,18 @@ instance Alternative Parser where
       }
 
   -- (<|>) :: Parser a -> Parser a -> Parser a
-  (<|>) pA@(Parser {pLabel = labelA}) pB@(Parser {pLabel = labelB}) =
+  (<|>) pA@(Parser {pLabel = ParserLabel labelA}) pB@(Parser {pLabel = ParserLabel labelB}) =
     Parser
       { parseFn = \input -> case runOnInput pA input of
           result@(Success _) -> result
           Failure _ -> runOnInput pB input,
-        pLabel = ParserLabel $ show labelA ++ " orElse " ++ show labelB
+        pLabel = ParserLabel $ labelA <> " orElse " <> labelB
       }
 
 runOnInput :: Parser t -> InputState -> ParseResult (t, InputState)
 runOnInput (Parser {parseFn = parseFn}) input = parseFn input
 
-run :: Parser t -> String -> ParseResult (t, InputState)
+run :: Parser t -> T.Text -> ParseResult (t, InputState)
 run parser inputStr = runOnInput parser $ fromStr inputStr
 
 setLabel parser newLabel =
@@ -81,21 +82,18 @@ getLabel :: Parser a -> ParserLabel
 getLabel (Parser {pLabel = pLabel}) = pLabel
 
 andThen :: Parser a -> Parser b -> Parser (a, b)
-andThen pA@(Parser {pLabel = labelA}) pB@(Parser {pLabel = labelB}) = do
+andThen pA@(Parser {pLabel = (ParserLabel labelA)}) pB@(Parser {pLabel = (ParserLabel labelB)}) = do
   pAResult <- pA
   pBResult <- pB
-  pure (pAResult, pBResult) <?> ParserLabel (show labelA ++ " andThen " ++ show labelB)
+  pure (pAResult, pBResult) <?> ParserLabel (labelA <> " andThen " <> labelB)
 
-orElse pA@(Parser {pLabel = labelA}) pB@(Parser {pLabel = labelB}) =
+orElse pA@(Parser {pLabel = (ParserLabel labelA)}) pB@(Parser {pLabel = (ParserLabel labelB)}) =
   Parser
     { parseFn = \input -> case runOnInput pA input of
         result@(Success _) -> result
         Failure _ -> runOnInput pB input,
-      pLabel = ParserLabel $ show labelA ++ " orElse " ++ show labelB
+      pLabel = ParserLabel $ labelA <> " orElse " <> labelB
     }
-
-sequence' :: [Parser a] -> Parser [a]
-sequence' = foldr (liftA2 (:)) (pure [])
 
 between :: Parser a -> Parser b -> Parser c -> Parser b
 between pA pB pC = pA >>. pB .>> pC

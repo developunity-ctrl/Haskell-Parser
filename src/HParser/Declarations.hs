@@ -1,16 +1,17 @@
 module HParser.Declarations where
 
+import qualified Data.Text as T
 import HParser.InputState
 
-newtype ParserLabel = ParserLabel String deriving (Eq)
+newtype ParserLabel = ParserLabel T.Text deriving (Eq)
 
 instance Show ParserLabel where
-  show (ParserLabel label') = label'
+  show (ParserLabel label') = T.unpack label'
 
-newtype ParserError = ParserError String deriving (Eq)
+newtype ParserError = ParserError T.Text deriving (Eq)
 
 instance Show ParserError where
-  show (ParserError error') = error'
+  show (ParserError error') = T.unpack error'
 
 data ParseResult a
   = Success a
@@ -32,7 +33,7 @@ data Parser t = Parser
   }
 
 data ParserPosition = ParserPosition
-  { ppCurrentLine :: String,
+  { ppCurrentLine :: T.Text,
     ppLine :: Int,
     ppColumn :: Int
   }
@@ -54,7 +55,7 @@ parserPositionFromInputState inputState =
       ppColumn = pColumn $ position inputState
     }
 
-currentLine :: InputState -> String
+currentLine :: InputState -> T.Text
 currentLine (InputState {position = position', lines' = lines''})
   | linePos < (length lines'') = lines'' !! linePos
   | otherwise = "end of file"
@@ -65,8 +66,8 @@ nextChar :: InputState -> (InputState, Maybe Char)
 nextChar state@(InputState {position = position', lines' = lines''})
   | linesPos >= (length lines'') =
       (state, Nothing)
-  | colPos < (length currentLine') =
-      (state {position = incrCol position'}, Just $ currentLine' !! colPos)
+  | colPos < (T.length currentLine') =
+      (state {position = incrCol position'}, Just $ T.index currentLine' colPos)
   | otherwise =
       (state {position = incrLine position'}, Just '\n')
   where

@@ -1,7 +1,9 @@
 module HParser.InputState where
 
+import qualified Data.Text as T
+
 data InputState = InputState
-  { lines' :: [String],
+  { lines' :: [T.Text],
     position :: Position
   }
   deriving (Show)
@@ -15,6 +17,6 @@ instance Show Position where
   show (Position {pLine = pLine, pColumn = pColumn}) =
     "line: " ++ show pLine ++ ", column: " ++ show pColumn
 
-fromStr str = InputState {lines' = lines str, position = initialPos}
+fromStr str = InputState {lines' = T.lines str, position = initialPos}
 
 initialPos = Position {pLine = 0, pColumn = 0}

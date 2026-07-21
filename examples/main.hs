@@ -1,5 +1,6 @@
 module Main where
 
+import qualified Data.Text as T
 import Debug.Trace
 import HParser.Combinators
 import HParser.Declarations
@@ -13,7 +14,7 @@ import HParser.Parsers
 
 -- intArray = between (pchar '[') (sepBy1 pint (pchar ',')) (pchar ']')
 
-exampleError :: ParseResult (Char, String)
+exampleError :: ParseResult (Char, T.Text)
 exampleError =
   Failure
     ( ParserLabel "indentifier",
@@ -27,5 +28,5 @@ exampleError =
 
 main = do
   putStrLn "\nStarted NTParser\n"
-  print $ run pfloat "-12.32325Z"
+  print $ run (pstring "AB") "AB"
   putStrLn "\nComplete NTParser"

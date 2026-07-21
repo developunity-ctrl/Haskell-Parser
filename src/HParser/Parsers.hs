@@ -2,12 +2,13 @@ module HParser.Parsers where
 
 import Control.Applicative (Alternative (..), optional)
 import Data.List (intersperse)
+import qualified Data.Text as T
 import Debug.Trace (trace)
 import HParser.Combinators
 import HParser.Declarations
 import HParser.InputState
 
-satisfy :: (Char -> Bool) -> String -> Parser Char
+satisfy :: (Char -> Bool) -> T.Text -> Parser Char
 satisfy predicate label' =
   Parser
     { parseFn = innerFn,
@@ -23,13 +24,13 @@ satisfy predicate label' =
                 then
                   Success (first, remainingInput)
                 else
-                  Failure (ParserLabel label', ParserError ("Unexpected " ++ [first]), parserPositionFromInputState input)
+                  Failure (ParserLabel label', ParserError ("Unexpected " <> (T.singleton first)), parserPositionFromInputState input)
 
 pchar :: Char -> Parser Char
-pchar c = satisfy (== c) [c]
+pchar c = satisfy (== c) (T.singleton c)
 
-pstring :: String -> Parser String
-pstring = sequence' . (map pchar)
+pstring :: T.Text -> Parser T.Text
+pstring = (T.foldr' ((liftA2 T.cons) . pchar) (pure ""))
 
 pint :: Parser Int
 pint =
@@ -58,5 +59,6 @@ choice = foldr (<|>) empty
 
 anyOf :: [Char] -> Parser Char
 anyOf listOfChars =
-  satisfy (`elem` listOfChars) ""
-    <?> ParserLabel ("any of " ++ intersperse ';' listOfChars)
+  let text = T.pack listOfChars
+   in satisfy (`T.elem` text) ""
+        <?> ParserLabel ("any of " <> T.intersperse ';' text)
