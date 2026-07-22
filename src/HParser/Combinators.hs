@@ -56,11 +56,14 @@ instance Alternative Parser where
   -- (<|>) :: Parser a -> Parser a -> Parser a
   (<|>) pA@(Parser {pLabel = ParserLabel labelA}) pB@(Parser {pLabel = ParserLabel labelB}) =
     Parser
-      { parseFn = \input -> case runOnInput pA input of
-          result@(Success _) -> result
-          Failure _ -> runOnInput pB input,
+      { parseFn = \input -> (runOnInput pA input) `combine` (runOnInput pB input),
         pLabel = ParserLabel $ labelA <> " orElse " <> labelB
       }
+
+combine result@(Success _) _ = result
+combine _ result@(Success _) = result
+combine fail1@(Failure (_, _, pos1)) fail2@(Failure (_, _, pos2)) =
+  if (ppColumn pos1) > (ppColumn pos2) then fail1 else fail2
 
 runOnInput :: Parser t -> InputState -> ParseResult (t, InputState)
 runOnInput (Parser {parseFn = parseFn}) input = parseFn input
@@ -119,3 +122,6 @@ pA >>. pB = (pA .>>. pB) |>> (\(a, b) -> b)
 
 (<?>) :: Parser a -> ParserLabel -> Parser a
 (<?>) = setLabel
+
+(>>%) :: Parser a -> b -> Parser b
+(>>%) p x = p |>> (\_ -> x)

@@ -21,7 +21,7 @@ data ParseResult a
 instance (Show b) => Show (ParseResult (b, c)) where
   show (Success (value, _)) = (show value)
   show (Failure (label, error', parserPosition)) =
-    let failureCaret = (replicate (colPos) ' ') ++ "^" ++ show error'
+    let failureCaret = (replicate (colPos + 1) ' ') ++ "^" ++ show error'
         errorLine = show $ ppCurrentLine parserPosition
         colPos = ppColumn parserPosition
         linePos = show $ ppLine parserPosition
