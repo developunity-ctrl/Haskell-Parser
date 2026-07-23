@@ -40,16 +40,7 @@ instance Monad Parser where
 instance Alternative Parser where
   empty =
     Parser
-      { parseFn = \input ->
-          Failure
-            ( ParserLabel "empty",
-              ParserError "parsing empty",
-              ParserPosition
-                { ppLine = 0,
-                  ppColumn = 0,
-                  ppCurrentLine = ""
-                }
-            ),
+      { parseFn = \input -> emptyFailure,
         pLabel = ParserLabel "empty"
       }
 
@@ -59,14 +50,14 @@ instance Alternative Parser where
       { parseFn = \input -> (runOnInput pA input) `combine` (runOnInput pB input),
         pLabel = ParserLabel $ labelA <> " orElse " <> labelB
       }
-
-combine result@(Success _) _ = result
-combine _ result@(Success _) = result
-combine fail1@(Failure (_, _, pos1)) fail2@(Failure (_, _, pos2)) =
-  if (ppColumn pos1) > (ppColumn pos2) then fail1 else fail2
+    where
+      combine result@(Success _) _ = result
+      combine _ result@(Success _) = result
+      combine fail1@(Failure (_, _, pos1)) fail2@(Failure (_, _, pos2)) =
+        if (ppColumn pos1) > (ppColumn pos2) then fail1 else fail2
 
 runOnInput :: Parser t -> InputState -> ParseResult (t, InputState)
-runOnInput (Parser {parseFn = parseFn}) input = parseFn input
+runOnInput (Parser {parseFn}) input = parseFn input
 
 run :: Parser t -> T.Text -> ParseResult (t, InputState)
 run parser inputStr = runOnInput parser $ fromStr inputStr
@@ -82,21 +73,13 @@ setLabel parser newLabel =
     }
 
 getLabel :: Parser a -> ParserLabel
-getLabel (Parser {pLabel = pLabel}) = pLabel
+getLabel (Parser {pLabel}) = pLabel
 
 andThen :: Parser a -> Parser b -> Parser (a, b)
 andThen pA@(Parser {pLabel = (ParserLabel labelA)}) pB@(Parser {pLabel = (ParserLabel labelB)}) = do
   pAResult <- pA
   pBResult <- pB
   pure (pAResult, pBResult) <?> ParserLabel (labelA <> " andThen " <> labelB)
-
-orElse pA@(Parser {pLabel = (ParserLabel labelA)}) pB@(Parser {pLabel = (ParserLabel labelB)}) =
-  Parser
-    { parseFn = \input -> case runOnInput pA input of
-        result@(Success _) -> result
-        Failure _ -> runOnInput pB input,
-      pLabel = ParserLabel $ labelA <> " orElse " <> labelB
-    }
 
 between :: Parser a -> Parser b -> Parser c -> Parser b
 between pA pB pC = pA >>. pB .>> pC

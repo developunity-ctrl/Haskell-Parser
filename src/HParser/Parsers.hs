@@ -15,16 +15,10 @@ satisfy predicate label' =
       pLabel = ParserLabel label'
     }
   where
-    innerFn input =
-      let (remainingInput, charOpt) = nextChar input
-       in case charOpt of
-            Nothing -> Failure (ParserLabel label', ParserError "No more input", parserPositionFromInputState input)
-            Just first ->
-              if predicate first
-                then
-                  Success (first, remainingInput)
-                else
-                  Failure (ParserLabel label', ParserError ("Unexpected " <> (T.singleton first)), parserPositionFromInputState input)
+    innerFn input@(nextChar -> (remainingInput, charOpt))
+      | Nothing <- charOpt = Failure (ParserLabel label', ParserError "No more input", parserPositionFromInputState input)
+      | Just first <- charOpt, predicate first = Success (first, remainingInput)
+      | Just first <- charOpt = Failure (ParserLabel label', ParserError ("Unexpected " <> (T.singleton first)), parserPositionFromInputState input)
 
 pchar :: Char -> Parser Char
 pchar c = satisfy (== c) (T.singleton c)

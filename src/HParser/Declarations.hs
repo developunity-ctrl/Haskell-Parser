@@ -43,9 +43,9 @@ data ParserPosition = ParserPosition
 -- buildFailure label error' =
 --   Failure (ParserLabel label, ParsersError error')
 
-incrCol pos@(Position {pColumn = column}) = pos {pColumn = column + 1}
+incrCol pos@(Position {pColumn}) = pos {pColumn = pColumn + 1}
 
-incrLine pos@(Position {pLine = line}) = pos {pLine = line + 1, pColumn = 0}
+incrLine pos@(Position {pLine}) = pos {pLine = pLine + 1, pColumn = 0}
 
 parserPositionFromInputState :: InputState -> ParserPosition
 parserPositionFromInputState inputState =
@@ -63,20 +63,28 @@ currentLine (InputState {position = position', lines' = lines''})
     linePos = pLine position'
 
 nextChar :: InputState -> (InputState, Maybe Char)
-nextChar state@(InputState {position = position', lines' = lines''})
-  | linesPos >= (length lines'') =
-      (state, Nothing)
-  | colPos < (T.length currentLine') =
-      (state {position = incrCol position'}, Just $ T.index currentLine' colPos)
-  | otherwise =
-      (state {position = incrLine position'}, Just '\n')
+nextChar state@(InputState {position, lines'})
+  | linesPos >= (length lines') = (state, Nothing)
+  | colPos < (T.length currentLine') = (state {position = incrCol position}, Just $ T.index currentLine' colPos)
+  | otherwise = (state {position = incrLine position}, Just '\n')
   where
     currentLine' = currentLine state
-    linesPos = pLine position'
-    colPos = pColumn position'
+    linesPos = pLine position
+    colPos = pColumn position
 
 readAllChars input =
   let (remainingInput, charOpt) = nextChar input
    in case charOpt of
         Nothing -> []
         Just ch -> ch : readAllChars remainingInput
+
+emptyFailure =
+  Failure
+    ( ParserLabel "empty",
+      ParserError "parsing empty",
+      ParserPosition
+        { ppLine = 0,
+          ppColumn = 0,
+          ppCurrentLine = ""
+        }
+    )
