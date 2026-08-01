@@ -1,9 +1,9 @@
 module HParser.Parsers where
 
 import Control.Applicative (Alternative (..), optional)
+import Data.Char (isSpace)
 import Data.List (intersperse)
 import qualified Data.Text as T
-import Debug.Trace (trace)
 import HParser.Combinators
 import HParser.Declarations
 import HParser.InputState
@@ -47,6 +47,12 @@ pfloat =
        in case sign of
             Just _ -> -float
             Nothing -> float
+
+whitespacesChar =
+  satisfy isSpace "whitespace"
+
+someWhitespace = some whitespacesChar
+manyWhitespaces = many whitespacesChar
 
 choice :: (Foldable f) => f (Parser a) -> Parser a
 choice = foldr (<|>) empty

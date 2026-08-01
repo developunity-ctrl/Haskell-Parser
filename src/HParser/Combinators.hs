@@ -1,6 +1,7 @@
 module HParser.Combinators where
 
 import Control.Applicative
+import qualified Control.Monad as T
 import qualified Data.Text as T
 import HParser.Declarations
 import HParser.InputState
@@ -28,7 +29,7 @@ instance Applicative Parser where
 
 instance Monad Parser where
   -- (>>=) :: Parser a -> (a -> Parser b) -> Parser b
-  (>>=) p f =
+  p >>= f =
     Parser
       { parseFn =
           \input -> case runOnInput p input of
@@ -40,12 +41,12 @@ instance Monad Parser where
 instance Alternative Parser where
   empty =
     Parser
-      { parseFn = \input -> emptyFailure,
+      { parseFn = \_ -> emptyFailure,
         pLabel = ParserLabel "empty"
       }
 
   -- (<|>) :: Parser a -> Parser a -> Parser a
-  (<|>) pA@(Parser {pLabel = ParserLabel labelA}) pB@(Parser {pLabel = ParserLabel labelB}) =
+  pA@(Parser {pLabel = ParserLabel labelA}) <|> pB@(Parser {pLabel = ParserLabel labelB}) =
     Parser
       { parseFn = \input -> (runOnInput pA input) `combine` (runOnInput pB input),
         pLabel = ParserLabel $ labelA <> " orElse " <> labelB
@@ -65,10 +66,9 @@ run parser inputStr = runOnInput parser $ fromStr inputStr
 setLabel parser newLabel =
   Parser
     { parseFn =
-        ( \input -> case runOnInput parser input of
-            Success s -> Success s
-            Failure (oldLabel, err, pos) -> Failure (newLabel, err, pos)
-        ),
+        \input -> case runOnInput parser input of
+          Success s -> Success s
+          Failure (oldLabel, err, pos) -> Failure (newLabel, err, pos),
       pLabel = newLabel
     }
 
@@ -95,16 +95,16 @@ sepBy p sep = sepBy1 p sep <|> pure []
 (.>>.) = andThen
 
 (|>>) :: Parser a -> (a -> b) -> Parser b
-(|>>) x f = f <$> x
+x |>> f = f <$> x
 
 (.>>) :: Parser a -> Parser b -> Parser a
-pA .>> pB = (pA .>>. pB) |>> (\(a, b) -> a)
+pA .>> pB = (pA .>>. pB) |>> (\(a, _) -> a)
 
 (>>.) :: Parser a -> Parser b -> Parser b
-pA >>. pB = (pA .>>. pB) |>> (\(a, b) -> b)
+pA >>. pB = (pA .>>. pB) |>> (\(_, b) -> b)
 
 (<?>) :: Parser a -> ParserLabel -> Parser a
 (<?>) = setLabel
 
 (>>%) :: Parser a -> b -> Parser b
-(>>%) p x = p |>> (\_ -> x)
+p >>% x = p |>> (\_ -> x)
